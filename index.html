@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Micrófono y Cámara Web</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-4">
+        <!-- Header -->
+        <header class="text-center mb-4">
+            <h1 class="display-6 mb-2">
+                <i class="bi bi-camera-video me-2"></i>
+                Prueba de Dispositivos
+            </h1>
+            <p class="text-muted">Prueba tu micrófono y cámara web con efectos y grabación</p>
+        </header>
+
+        <!-- Device Selection -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="bi bi-camera me-2"></i>
+                            Cámara
+                        </h6>
+                        <select class="form-select form-select-sm" id="cameraSelect">
+                            <option value="">Cargando cámaras...</option>
+                        </select>
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-primary" id="toggleCamera">
+                                <i class="bi bi-camera-video"></i>
+                                Activar Cámara
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="bi bi-mic me-2"></i>
+                            Micrófono
+                        </h6>
+                        <select class="form-select form-select-sm" id="microphoneSelect">
+                            <option value="">Cargando micrófonos...</option>
+                        </select>
+                        <div class="mt-2">
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-success" id="audioLevel" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted">Nivel de audio</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Video Preview -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="video-container">
+                            <video id="videoPreview" autoplay muted class="video-preview"></video>
+                            <div class="video-placeholder" id="videoPlaceholder">
+                                <i class="bi bi-camera-video-off display-1 text-muted"></i>
+                                <p class="text-muted mt-2">Activa la cámara para ver la vista previa</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Camera Effects -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="bi bi-palette me-2"></i>
+                            Efectos de Cámara
+                        </h6>
+                        <div class="btn-group-sm d-flex flex-wrap gap-2" role="group">
+                            <button class="btn btn-outline-secondary effect-btn" data-effect="none">
+                                <i class="bi bi-circle"></i> Normal
+                            </button>
+                            <button class="btn btn-outline-secondary effect-btn" data-effect="grayscale">
+                                <i class="bi bi-filter-square"></i> Escala de Grises
+                            </button>
+                            <button class="btn btn-outline-secondary effect-btn" data-effect="sepia">
+                                <i class="bi bi-palette2"></i> Sepia
+                            </button>
+                            <button class="btn btn-outline-secondary effect-btn" data-effect="blur">
+                                <i class="bi bi-droplet"></i> Blur
+                            </button>
+                            <button class="btn btn-outline-secondary effect-btn" data-effect="brightness">
+                                <i class="bi bi-brightness-high"></i> Brillo+
+                            </button>
+                            <button class="btn btn-outline-secondary effect-btn" data-effect="contrast">
+                                <i class="bi bi-contrast"></i> Contraste+
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audio Recording -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="bi bi-record-circle me-2"></i>
+                            Grabación de Audio
+                        </h6>
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <button class="btn btn-danger" id="recordButton">
+                                <i class="bi bi-record-fill"></i>
+                                <span id="recordButtonText">Iniciar Grabación</span>
+                            </button>
+                            <div class="recording-time">
+                                <span id="recordingTime" class="badge bg-danger d-none">00:00</span>
+                            </div>
+                        </div>
+                        <div id="recordingIndicator" class="recording-indicator d-none">
+                            <div class="d-flex align-items-center">
+                                <div class="recording-pulse me-2"></div>
+                                <small class="text-danger">Grabando...</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="bi bi-play-circle me-2"></i>
+                            Reproducción
+                        </h6>
+                        <audio id="audioPlayback" controls class="w-100 mb-2 d-none"></audio>
+                        <div id="noRecording" class="text-muted small">
+                            No hay grabaciones disponibles
+                        </div>
+                        <button class="btn btn-success btn-sm d-none" id="downloadButton">
+                            <i class="bi bi-download"></i>
+                            Descargar Audio
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions Footer -->
+        <footer class="text-center text-muted">
+            <small>
+                <i class="bi bi-info-circle me-1"></i>
+                La aplicación requiere permisos de cámara y micrófono para funcionar correctamente
+            </small>
+        </footer>
+
+        <!-- Permission Modal -->
+        <div class="modal fade" id="permissionModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-shield-check me-2"></i>
+                            Permisos Requeridos
+                        </h5>
+                    </div>
+                    <div class="modal-body">
+                        <p>Esta aplicación necesita acceso a tu cámara y micrófono para:</p>
+                        <ul>
+                            <li>Mostrar vista previa de la cámara</li>
+                            <li>Grabar audio desde el micrófono</li>
+                            <li>Probar diferentes dispositivos</li>
+                        </ul>
+                        <p class="mb-0"><strong>Haz clic en "Permitir" cuando tu navegador solicite los permisos.</strong></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" id="requestPermissions">
+                            <i class="bi bi-check-lg me-2"></i>
+                            Solicitar Permisos
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Alert -->
+        <div class="alert alert-danger alert-dismissible fade d-none" role="alert" id="errorAlert">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <span id="errorMessage"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="app.js"></script>
+</body>
+</html>
