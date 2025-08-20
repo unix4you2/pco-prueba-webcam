@@ -742,13 +742,14 @@ select.form-control {
 .video-container {
   position: relative;
   width: 100%;
-  height: 300px;
-  background: var(--color-background);
+  height: 400px;
+  background: var(--color-surface);
   border-radius: var(--radius-lg);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 2px solid var(--color-border);
 }
 
 .video-preview {
@@ -757,6 +758,11 @@ select.form-control {
   object-fit: cover;
   border-radius: var(--radius-lg);
   background: var(--color-charcoal-800);
+  transition: filter var(--duration-normal) var(--ease-standard);
+}
+
+.video-preview.d-none {
+  display: none !important;
 }
 
 .video-placeholder {
@@ -766,6 +772,12 @@ select.form-control {
   justify-content: center;
   height: 100%;
   color: var(--color-text-secondary);
+  text-align: center;
+  padding: var(--space-32);
+}
+
+.video-placeholder.d-none {
+  display: none !important;
 }
 
 /* Camera Effects */
@@ -778,53 +790,35 @@ select.form-control {
 }
 
 .effect-btn:hover {
-  background-color: var(--color-secondary);
+  background-color: var(--color-secondary-hover);
   border-color: var(--color-primary);
+  transform: translateY(-2px);
 }
 
 .effect-btn.active {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
   color: var(--color-btn-primary-text);
-}
-
-/* Video Filter Effects */
-.effect-grayscale {
-  filter: grayscale(100%);
-}
-
-.effect-sepia {
-  filter: sepia(100%);
-}
-
-.effect-blur {
-  filter: blur(2px);
-}
-
-.effect-brightness {
-  filter: brightness(150%);
-}
-
-.effect-contrast {
-  filter: contrast(150%);
+  box-shadow: var(--shadow-md);
 }
 
 /* Recording Indicator */
 .recording-indicator {
   display: flex;
   align-items: center;
-  padding: var(--space-8);
+  padding: var(--space-12);
   background: rgba(var(--color-error-rgb), 0.1);
-  border: 1px solid rgba(var(--color-error-rgb), 0.2);
+  border: 1px solid rgba(var(--color-error-rgb), 0.3);
   border-radius: var(--radius-base);
+  margin-top: var(--space-8);
 }
 
 .recording-pulse {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   background: var(--color-error);
   border-radius: 50%;
-  animation: pulse 1s infinite;
+  animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
@@ -833,8 +827,8 @@ select.form-control {
     transform: scale(1);
   }
   50% {
-    opacity: 0.5;
-    transform: scale(1.2);
+    opacity: 0.3;
+    transform: scale(1.4);
   }
   100% {
     opacity: 1;
@@ -848,34 +842,56 @@ select.form-control {
   font-weight: var(--font-weight-bold);
 }
 
+#recordingTime {
+  font-size: var(--font-size-sm);
+  padding: var(--space-4) var(--space-8);
+}
+
 /* Audio Level Progress */
 .progress {
-  background-color: rgba(var(--color-success-rgb), 0.1);
-  border: 1px solid rgba(var(--color-success-rgb), 0.2);
+  background-color: rgba(var(--color-success-rgb), 0.15);
+  border: 1px solid rgba(var(--color-success-rgb), 0.25);
+  border-radius: var(--radius-base);
+  overflow: hidden;
 }
 
 .progress-bar {
-  transition: width 0.1s ease;
+  transition: width 0.05s ease-out;
   background: linear-gradient(90deg, 
     var(--color-success) 0%, 
+    var(--color-success) 50%,
     var(--color-warning) 70%, 
-    var(--color-error) 100%);
+    var(--color-error) 90%);
+  border-radius: var(--radius-sm);
 }
 
 /* Card Hover Effects */
 .card {
   transition: all var(--duration-normal) var(--ease-standard);
   border-color: var(--color-card-border);
+  background: var(--color-surface);
 }
 
 .card:hover {
   box-shadow: var(--shadow-lg);
-  border-color: rgba(var(--color-primary-rgb, var(--color-teal-500-rgb)), 0.3);
+  border-color: rgba(var(--color-primary-rgb, var(--color-teal-500-rgb)), 0.4);
+  transform: translateY(-2px);
 }
 
 /* Button States */
 .btn {
   transition: all var(--duration-normal) var(--ease-standard);
+  border-width: 1px;
+  font-weight: var(--font-weight-medium);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn:active {
+  transform: translateY(0);
 }
 
 .btn-danger:hover {
@@ -888,28 +904,47 @@ select.form-control {
   border-color: var(--color-success);
 }
 
+.btn-outline-secondary:hover {
+  background: var(--color-secondary-hover);
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
 /* Device Selection */
 .form-select {
   border-color: var(--color-border);
   background-color: var(--color-surface);
   color: var(--color-text);
+  transition: all var(--duration-fast) var(--ease-standard);
 }
 
 .form-select:focus {
   border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
+  outline: none;
+}
+
+.form-select:hover {
+  border-color: var(--color-primary-hover);
 }
 
 /* Alert Styling */
 .alert {
   border-radius: var(--radius-base);
   border: none;
+  box-shadow: var(--shadow-sm);
 }
 
 .alert-danger {
   background: rgba(var(--color-error-rgb), 0.1);
   color: var(--color-error);
-  border: 1px solid rgba(var(--color-error-rgb), 0.2);
+  border: 1px solid rgba(var(--color-error-rgb), 0.3);
+}
+
+.alert-success {
+  background: rgba(var(--color-success-rgb), 0.1);
+  color: var(--color-success);
+  border: 1px solid rgba(var(--color-success-rgb), 0.3);
 }
 
 /* Modal Styling */
@@ -917,33 +952,78 @@ select.form-control {
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-card-border);
   background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
 }
 
 .modal-header {
   border-bottom: 1px solid var(--color-card-border-inner);
   background: var(--color-background);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .modal-footer {
   border-top: 1px solid var(--color-card-border-inner);
   background: var(--color-background);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 /* Audio Controls */
 audio {
   border-radius: var(--radius-base);
-  background: var(--color-background);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+/* Device Status Badges */
+.badge {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-4) var(--space-8);
+  border-radius: var(--radius-sm);
+}
+
+.badge.bg-primary {
+  background: var(--color-primary) !important;
+  color: var(--color-btn-primary-text);
+}
+
+.badge.bg-success {
+  background: var(--color-success) !important;
+  color: var(--color-btn-primary-text);
+}
+
+.badge.bg-danger {
+  background: var(--color-error) !important;
+  color: var(--color-white);
+}
+
+/* Camera Controls Section */
+#cameraControls {
+  animation: slideIn var(--duration-normal) var(--ease-standard);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
   .video-container {
-    height: 250px;
+    height: 300px;
   }
   
   .effect-btn {
     font-size: var(--font-size-xs);
-    padding: var(--space-4) var(--space-8);
+    padding: var(--space-6) var(--space-10);
+    flex: none;
+    width: calc(50% - var(--space-4));
   }
   
   .btn-group-sm .btn {
@@ -953,21 +1033,34 @@ audio {
   .display-6 {
     font-size: var(--font-size-2xl);
   }
+  
+  .video-placeholder {
+    padding: var(--space-16);
+  }
+  
+  .video-placeholder i {
+    font-size: var(--font-size-4xl);
+  }
 }
 
 @media (max-width: 576px) {
   .video-container {
-    height: 200px;
+    height: 250px;
   }
   
   .container {
-    padding-left: var(--space-8);
-    padding-right: var(--space-8);
+    padding-left: var(--space-12);
+    padding-right: var(--space-12);
   }
   
   .effect-btn {
-    flex: none;
-    width: calc(50% - var(--space-4));
+    width: 100%;
+    margin-bottom: var(--space-8);
+  }
+  
+  .btn-group-sm {
+    flex-direction: column;
+    gap: var(--space-8) !important;
   }
 }
 
@@ -975,6 +1068,7 @@ audio {
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none !important;
 }
 
 .btn .spinner-border {
@@ -982,27 +1076,18 @@ audio {
   height: 1rem;
 }
 
-/* Custom Scrollbar for Small Screens */
-@media (max-width: 768px) {
-  .btn-group-sm {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: var(--color-border) transparent;
-  }
-  
-  .btn-group-sm::-webkit-scrollbar {
-    height: 4px;
-  }
-  
-  .btn-group-sm::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  
-  .btn-group-sm::-webkit-scrollbar-thumb {
-    background: var(--color-border);
-    border-radius: var(--radius-full);
-  }
+/* Custom Scrollbar */
+.btn-group-sm::-webkit-scrollbar {
+  height: 4px;
+}
+
+.btn-group-sm::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.btn-group-sm::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
 }
 
 /* Status Indicators */
@@ -1029,7 +1114,11 @@ audio {
   }
   
   .effect-btn.active {
-    box-shadow: 0 0 0 2px var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary);
+  }
+  
+  .video-container {
+    border-width: 3px;
   }
 }
 
@@ -1047,6 +1136,11 @@ audio {
     animation: none;
     opacity: 1;
   }
+  
+  .btn:hover,
+  .card:hover {
+    transform: none !important;
+  }
 }
 
 /* Focus Visible Enhancement */
@@ -1057,7 +1151,7 @@ audio {
   box-shadow: var(--focus-ring);
 }
 
-/* Device-specific improvements */
+/* Touch Device Improvements */
 @media (hover: none) and (pointer: coarse) {
   .btn {
     min-height: 44px;
@@ -1067,9 +1161,13 @@ audio {
   .form-select {
     min-height: 44px;
   }
+  
+  .effect-btn {
+    padding: var(--space-12) var(--space-16);
+  }
 }
 
-/* Print styles */
+/* Print Styles */
 @media print {
   .btn,
   .modal,
@@ -1079,5 +1177,11 @@ audio {
   
   .video-container {
     border: 2px solid var(--color-text);
+    background: var(--color-white);
+  }
+  
+  .card {
+    box-shadow: none;
+    border: 1px solid var(--color-text);
   }
 }

@@ -20,80 +20,110 @@ class DeviceTester {
         this.setupEventListeners();
         // Check if permissions are already granted
         try {
-            const result = await navigator.permissions.query({name: 'camera'});
-            const audioResult = await navigator.permissions.query({name: 'microphone'});
-            
-            if (result.state === 'granted' && audioResult.state === 'granted') {
-                await this.loadDevices();
-            } else {
-                this.showPermissionModal();
-            }
+            await this.checkExistingPermissions();
         } catch (error) {
-            // If permissions API is not supported, try to get media directly
+            this.showPermissionModal();
+        }
+    }
+
+    async checkExistingPermissions() {
+        try {
+            // Try to get media to check if permissions are already granted
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            });
+            
+            this.currentStream = stream;
+            this.permissionsGranted = true;
+            await this.loadDevices();
+            
+        } catch (error) {
+            // Permissions not granted, show modal
             this.showPermissionModal();
         }
     }
 
     setupEventListeners() {
         // Permission modal
-        document.getElementById('requestPermissions').addEventListener('click', () => {
-            this.requestPermissions();
-        });
+        const requestBtn = document.getElementById('requestPermissions');
+        if (requestBtn) {
+            requestBtn.addEventListener('click', async () => {
+                await this.requestPermissions();
+            });
+        }
 
         // Device selection
-        document.getElementById('cameraSelect').addEventListener('change', (e) => {
-            if (e.target.value) {
-                this.switchCamera(e.target.value);
-            }
-        });
+        const cameraSelect = document.getElementById('cameraSelect');
+        if (cameraSelect) {
+            cameraSelect.addEventListener('change', async (e) => {
+                if (e.target.value) {
+                    await this.switchCamera(e.target.value);
+                }
+            });
+        }
 
-        document.getElementById('microphoneSelect').addEventListener('change', (e) => {
-            if (e.target.value) {
-                this.switchMicrophone(e.target.value);
-            }
-        });
-
-        // Camera toggle
-        document.getElementById('toggleCamera').addEventListener('click', () => {
-            this.toggleCamera();
-        });
+        const microphoneSelect = document.getElementById('microphoneSelect');
+        if (microphoneSelect) {
+            microphoneSelect.addEventListener('change', async (e) => {
+                if (e.target.value) {
+                    await this.switchMicrophone(e.target.value);
+                }
+            });
+        }
 
         // Effect buttons
         document.querySelectorAll('.effect-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                this.applyEffect(e.target.closest('.effect-btn').dataset.effect);
-                this.updateActiveEffect(e.target.closest('.effect-btn'));
+                const effectBtn = e.target.closest('.effect-btn');
+                if (effectBtn && effectBtn.dataset.effect) {
+                    this.applyEffect(effectBtn.dataset.effect);
+                    this.updateActiveEffect(effectBtn);
+                }
             });
         });
 
         // Recording controls
-        document.getElementById('recordButton').addEventListener('click', () => {
-            this.toggleRecording();
-        });
+        const recordBtn = document.getElementById('recordButton');
+        if (recordBtn) {
+            recordBtn.addEventListener('click', () => {
+                this.toggleRecording();
+            });
+        }
 
-        document.getElementById('downloadButton').addEventListener('click', () => {
-            this.downloadRecording();
-        });
+        const downloadBtn = document.getElementById('downloadButton');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', () => {
+                this.downloadRecording();
+            });
+        }
     }
 
     showPermissionModal() {
-        const modal = new bootstrap.Modal(document.getElementById('permissionModal'), {
-            backdrop: 'static',
-            keyboard: false
-        });
-        modal.show();
+        const modalElement = document.getElementById('permissionModal');
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement, {
+                backdrop: 'static',
+                keyboard: false
+            });
+            modal.show();
+        }
     }
 
     hidePermissionModal() {
         const modalElement = document.getElementById('permissionModal');
-        const modal = bootstrap.Modal.getInstance(modalElement);
-        if (modal) {
-            modal.hide();
+        if (modalElement) {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
         }
     }
 
     async requestPermissions() {
         try {
+            console.log('Requesting permissions...');
+            
             // Request both video and audio permissions
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { 
@@ -102,124 +132,146 @@ class DeviceTester {
                 },
                 audio: {
                     echoCancellation: true,
-                    noiseSuppression: true
+                    noiseSuppression: true,
+                    sampleRate: 44100
                 }
             });
             
-            // Store the stream temporarily
+            console.log('Permissions granted, stream obtained');
+            
+            // Store the stream
             this.currentStream = stream;
             this.permissionsGranted = true;
             
-            await this.loadDevices();
+            // Hide modal first
             this.hidePermissionModal();
+            
+            // Load devices
+            await this.loadDevices();
+            
+            // Show success message
             this.showSuccess('Permisos concedidos correctamente');
             
-            // Show camera preview by default
-            this.showVideoPreview();
-            this.updateCameraButton(true);
-            
-            // Setup audio analyzer
-            this.setupAudioAnalyzer();
-            
         } catch (error) {
-            this.showError('Error al obtener permisos: ' + error.message);
             console.error('Permission error:', error);
+            this.showError('Error al obtener permisos: ' + error.message);
         }
     }
 
     async loadDevices() {
         try {
+            console.log('Loading devices...');
             const devices = await navigator.mediaDevices.enumerateDevices();
             
-            const cameras = devices.filter(device => device.kind === 'videoinput');
-            const microphones = devices.filter(device => device.kind === 'audioinput');
+            // Limpiar selects
+            const cameraSelect = document.getElementById('cameraSelect');
+            const microphoneSelect = document.getElementById('microphoneSelect');
             
-            this.populateDeviceSelect('cameraSelect', cameras, 'No hay cámaras disponibles');
-            this.populateDeviceSelect('microphoneSelect', microphones, 'No hay micrófonos disponibles');
+            if (!cameraSelect || !microphoneSelect) {
+                console.error('Device selects not found');
+                return;
+            }
             
-            console.log('Devices loaded:', { cameras: cameras.length, microphones: microphones.length });
+            cameraSelect.innerHTML = '<option value="">Seleccionar cámara...</option>';
+            microphoneSelect.innerHTML = '<option value="">Seleccionar micrófono...</option>';
+            
+            let cameraCount = 0;
+            let microphoneCount = 0;
+            
+            // Filtrar y agregar TODOS los dispositivos
+            devices.forEach((device, index) => {
+                const option = document.createElement('option');
+                option.value = device.deviceId;
+                option.text = device.label || `${device.kind} ${index + 1}`;
+                
+                if (device.kind === 'videoinput') {
+                    cameraSelect.appendChild(option);
+                    cameraCount++;
+                    console.log('Camera found:', device.label || `Camera ${cameraCount}`);
+                } else if (device.kind === 'audioinput') {
+                    microphoneSelect.appendChild(option);
+                    microphoneCount++;
+                    console.log('Microphone found:', device.label || `Microphone ${microphoneCount}`);
+                }
+            });
+            
+            // Actualizar contadores
+            const cameraCountEl = document.getElementById('cameraCount');
+            const microphoneCountEl = document.getElementById('microphoneCount');
+            
+            if (cameraCountEl) cameraCountEl.textContent = cameraCount;
+            if (microphoneCountEl) microphoneCountEl.textContent = microphoneCount;
+            
+            // Auto-seleccionar primer dispositivo
+            if (cameraSelect.options.length > 1) {
+                cameraSelect.selectedIndex = 1;
+                await this.switchCamera(cameraSelect.value);
+            }
+            if (microphoneSelect.options.length > 1) {
+                microphoneSelect.selectedIndex = 1;
+                await this.switchMicrophone(microphoneSelect.value);
+            }
+            
+            console.log('Devices loaded:', { cameras: cameraCount, microphones: microphoneCount });
             
         } catch (error) {
-            this.showError('Error al cargar dispositivos: ' + error.message);
             console.error('Device loading error:', error);
-        }
-    }
-
-    populateDeviceSelect(selectId, devices, emptyMessage) {
-        const select = document.getElementById(selectId);
-        select.innerHTML = '';
-        
-        if (devices.length === 0) {
-            select.innerHTML = `<option value="">${emptyMessage}</option>`;
-            return;
-        }
-        
-        devices.forEach((device, index) => {
-            const option = document.createElement('option');
-            option.value = device.deviceId;
-            option.textContent = device.label || `Dispositivo ${index + 1}`;
-            select.appendChild(option);
-        });
-        
-        // Auto-select first device
-        if (devices.length > 0) {
-            select.value = devices[0].deviceId;
+            this.showError('Error al cargar dispositivos: ' + error.message);
         }
     }
 
     async switchCamera(deviceId) {
-        if (!deviceId || !this.permissionsGranted) return;
-        
         try {
-            // Stop current video tracks
+            console.log('Switching camera to:', deviceId);
+            
             if (this.currentStream) {
-                this.currentStream.getVideoTracks().forEach(track => track.stop());
+                this.currentStream.getTracks().forEach(track => track.stop());
             }
             
-            const constraints = {
-                video: {
-                    deviceId: { exact: deviceId },
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                },
-                audio: this.currentStream ? {
-                    deviceId: this.currentStream.getAudioTracks()[0]?.getSettings?.().deviceId || true
-                } : true
-            };
-            
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            this.currentStream = stream;
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { deviceId: { exact: deviceId } },
+                audio: false
+            });
             
             const video = document.getElementById('videoPreview');
-            video.srcObject = this.currentStream;
-            
-            this.showVideoPreview();
-            this.updateCameraButton(true);
-            
-            // Re-setup audio analyzer if needed
-            if (this.currentStream.getAudioTracks().length > 0) {
-                this.setupAudioAnalyzer();
+            if (video) {
+                video.srcObject = stream;
+                this.currentStream = stream;
+                
+                // Mostrar video y ocultar placeholder
+                this.showVideoPreview();
+                
+                // Mostrar controles de cámara
+                const cameraControls = document.getElementById('cameraControls');
+                if (cameraControls) {
+                    cameraControls.style.display = 'block';
+                }
+                
+                this.showSuccess('Cámara cambiada correctamente');
             }
             
         } catch (error) {
+            console.error('Error switching camera:', error);
             this.showError('Error al cambiar cámara: ' + error.message);
-            console.error('Camera switch error:', error);
         }
     }
 
     async switchMicrophone(deviceId) {
-        if (!deviceId || !this.permissionsGranted) return;
-        
         try {
-            // Stop current audio tracks
+            console.log('Switching microphone to:', deviceId);
+            
+            // Mantener video stream si existe
+            const videoConstraints = this.currentStream && this.currentStream.getVideoTracks().length > 0 
+                ? { deviceId: this.currentStream.getVideoTracks()[0].getSettings().deviceId || true }
+                : false;
+            
+            // Parar solo los tracks de audio
             if (this.currentStream) {
                 this.currentStream.getAudioTracks().forEach(track => track.stop());
             }
             
             const constraints = {
-                video: this.currentStream ? {
-                    deviceId: this.currentStream.getVideoTracks()[0]?.getSettings?.().deviceId || true
-                } : false,
+                video: videoConstraints,
                 audio: {
                     deviceId: { exact: deviceId },
                     echoCancellation: true,
@@ -229,19 +281,91 @@ class DeviceTester {
             };
             
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            this.currentStream = stream;
             
-            // Update video element if video tracks exist
-            if (this.currentStream.getVideoTracks().length > 0) {
-                const video = document.getElementById('videoPreview');
-                video.srcObject = this.currentStream;
+            // Combinar tracks si hay video existente
+            if (this.currentStream && this.currentStream.getVideoTracks().length > 0) {
+                const videoTrack = this.currentStream.getVideoTracks()[0];
+                const audioTrack = stream.getAudioTracks()[0];
+                
+                this.currentStream = new MediaStream([videoTrack, audioTrack]);
+            } else {
+                this.currentStream = stream;
             }
             
             this.setupAudioAnalyzer();
+            this.showSuccess('Micrófono cambiado correctamente');
             
         } catch (error) {
+            console.error('Error switching microphone:', error);
             this.showError('Error al cambiar micrófono: ' + error.message);
-            console.error('Microphone switch error:', error);
+        }
+    }
+
+    showVideoPreview() {
+        const video = document.getElementById('videoPreview');
+        const placeholder = document.getElementById('videoPlaceholder');
+        
+        if (video && placeholder) {
+            video.classList.remove('d-none');
+            placeholder.classList.add('d-none');
+        }
+    }
+
+    hideVideoPreview() {
+        const video = document.getElementById('videoPreview');
+        const placeholder = document.getElementById('videoPlaceholder');
+        
+        if (video && placeholder) {
+            video.classList.add('d-none');
+            placeholder.classList.remove('d-none');
+        }
+    }
+
+    applyEffect(effect) {
+        const video = document.getElementById('videoPreview');
+        if (!video) return;
+        
+        // Remover efectos previos
+        video.style.filter = '';
+        
+        // Aplicar nuevo efecto
+        switch(effect) {
+            case 'sepia':
+                video.style.filter = 'sepia(100%)';
+                break;
+            case 'blur':
+                video.style.filter = 'blur(3px)';
+                break;
+            case 'brightness':
+                video.style.filter = 'brightness(150%)';
+                break;
+            case 'contrast':
+                video.style.filter = 'contrast(150%)';
+                break;
+            case 'grayscale':
+                video.style.filter = 'grayscale(100%)';
+                break;
+            case 'saturate':
+                video.style.filter = 'saturate(200%)';
+                break;
+            case 'none':
+            default:
+                video.style.filter = 'none';
+                break;
+        }
+        
+        console.log('Applied effect:', effect);
+    }
+
+    updateActiveEffect(activeButton) {
+        // Remove active class from all buttons
+        document.querySelectorAll('.effect-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Add active class to clicked button
+        if (activeButton) {
+            activeButton.classList.add('active');
         }
     }
 
@@ -289,75 +413,6 @@ class DeviceTester {
         }
         
         requestAnimationFrame(() => this.updateAudioLevel());
-    }
-
-    toggleCamera() {
-        const video = document.getElementById('videoPreview');
-        const isVisible = !video.classList.contains('d-none');
-        
-        if (isVisible) {
-            this.hideVideoPreview();
-            this.updateCameraButton(false);
-        } else {
-            if (this.currentStream && this.currentStream.getVideoTracks().length > 0) {
-                this.showVideoPreview();
-                this.updateCameraButton(true);
-            } else {
-                const cameraSelect = document.getElementById('cameraSelect');
-                if (cameraSelect.value) {
-                    this.switchCamera(cameraSelect.value);
-                }
-            }
-        }
-    }
-
-    showVideoPreview() {
-        const video = document.getElementById('videoPreview');
-        const placeholder = document.getElementById('videoPlaceholder');
-        
-        video.classList.remove('d-none');
-        placeholder.classList.add('d-none');
-    }
-
-    hideVideoPreview() {
-        const video = document.getElementById('videoPreview');
-        const placeholder = document.getElementById('videoPlaceholder');
-        
-        video.classList.add('d-none');
-        placeholder.classList.remove('d-none');
-    }
-
-    updateCameraButton(isActive) {
-        const button = document.getElementById('toggleCamera');
-        
-        if (isActive) {
-            button.innerHTML = '<i class="bi bi-camera-video-fill"></i> Desactivar Cámara';
-            button.className = 'btn btn-sm btn-success';
-        } else {
-            button.innerHTML = '<i class="bi bi-camera-video"></i> Activar Cámara';
-            button.className = 'btn btn-sm btn-outline-primary';
-        }
-    }
-
-    applyEffect(effect) {
-        const video = document.getElementById('videoPreview');
-        
-        // Remove all effect classes
-        video.className = video.className.replace(/effect-\w+/g, '').trim();
-        
-        if (effect && effect !== 'none') {
-            video.classList.add(`effect-${effect}`);
-        }
-    }
-
-    updateActiveEffect(activeButton) {
-        // Remove active class from all buttons
-        document.querySelectorAll('.effect-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        
-        // Add active class to clicked button
-        activeButton.classList.add('active');
     }
 
     async toggleRecording() {
@@ -409,8 +464,8 @@ class DeviceTester {
             this.startRecordingTimer();
             
         } catch (error) {
-            this.showError('Error al iniciar grabación: ' + error.message);
             console.error('Recording start error:', error);
+            this.showError('Error al iniciar grabación: ' + error.message);
         }
     }
 
@@ -428,21 +483,27 @@ class DeviceTester {
         const buttonText = document.getElementById('recordButtonText');
         const indicator = document.getElementById('recordingIndicator');
         
+        if (!button || !buttonText || !indicator) return;
+        
         if (isRecording) {
             button.className = 'btn btn-outline-danger';
             buttonText.textContent = 'Detener Grabación';
             indicator.classList.remove('d-none');
-            button.querySelector('i').className = 'bi bi-stop-fill';
+            const icon = button.querySelector('i');
+            if (icon) icon.className = 'bi bi-stop-fill';
         } else {
             button.className = 'btn btn-danger';
             buttonText.textContent = 'Iniciar Grabación';
             indicator.classList.add('d-none');
-            button.querySelector('i').className = 'bi bi-record-fill';
+            const icon = button.querySelector('i');
+            if (icon) icon.className = 'bi bi-record-fill';
         }
     }
 
     startRecordingTimer() {
         const timeDisplay = document.getElementById('recordingTime');
+        if (!timeDisplay) return;
+        
         timeDisplay.classList.remove('d-none');
         
         this.recordingTimer = setInterval(() => {
@@ -461,8 +522,10 @@ class DeviceTester {
         }
         
         const timeDisplay = document.getElementById('recordingTime');
-        timeDisplay.classList.add('d-none');
-        timeDisplay.textContent = '00:00';
+        if (timeDisplay) {
+            timeDisplay.classList.add('d-none');
+            timeDisplay.textContent = '00:00';
+        }
     }
 
     processRecording() {
@@ -483,10 +546,18 @@ class DeviceTester {
         const downloadBtn = document.getElementById('downloadButton');
         const noRecording = document.getElementById('noRecording');
         
-        audio.src = url;
-        audio.classList.remove('d-none');
-        downloadBtn.classList.remove('d-none');
-        noRecording.classList.add('d-none');
+        if (audio) {
+            audio.src = url;
+            audio.classList.remove('d-none');
+        }
+        
+        if (downloadBtn) {
+            downloadBtn.classList.remove('d-none');
+        }
+        
+        if (noRecording) {
+            noRecording.classList.add('d-none');
+        }
         
         // Store blob for download
         this.recordedBlob = blob;
@@ -516,20 +587,26 @@ class DeviceTester {
         const alert = document.getElementById('errorAlert');
         const messageEl = document.getElementById('errorMessage');
         
-        messageEl.textContent = message;
-        alert.classList.remove('d-none');
-        alert.classList.add('show');
-        
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-            alert.classList.remove('show');
+        if (alert && messageEl) {
+            messageEl.textContent = message;
+            alert.classList.remove('d-none');
+            alert.classList.add('show');
+            
+            // Auto-hide after 5 seconds
             setTimeout(() => {
-                alert.classList.add('d-none');
-            }, 150);
-        }, 5000);
+                alert.classList.remove('show');
+                setTimeout(() => {
+                    alert.classList.add('d-none');
+                }, 150);
+            }, 5000);
+        }
+        
+        console.error('Error:', message);
     }
 
     showSuccess(message) {
+        console.log('Success:', message);
+        
         // Create temporary success alert
         const alertHtml = `
             <div class="alert alert-success alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
@@ -541,7 +618,8 @@ class DeviceTester {
         
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = alertHtml;
-        document.body.appendChild(tempDiv.firstElementChild);
+        const alertElement = tempDiv.firstElementChild;
+        document.body.appendChild(alertElement);
         
         // Auto-remove after 3 seconds
         setTimeout(() => {
@@ -555,6 +633,7 @@ class DeviceTester {
 
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing DeviceTester...');
     window.deviceTester = new DeviceTester();
 });
 

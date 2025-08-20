@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prueba de Micrófono y Cámara Web</title>
+    <title>Prueba de Micrófono y Cámara Web - Corregida</title>
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -18,7 +18,7 @@
         <header class="text-center mb-4">
             <h1 class="display-6 mb-2">
                 <i class="bi bi-camera-video me-2"></i>
-                Prueba de Dispositivos
+                Prueba de Dispositivos - Versión Corregida
             </h1>
             <p class="text-muted">Prueba tu micrófono y cámara web con efectos y grabación</p>
         </header>
@@ -33,14 +33,8 @@
                             Cámara
                         </h6>
                         <select class="form-select form-select-sm" id="cameraSelect">
-                            <option value="">Cargando cámaras...</option>
+                            <option value="">Seleccionar cámara...</option>
                         </select>
-                        <div class="mt-2">
-                            <button class="btn btn-sm btn-outline-primary" id="toggleCamera">
-                                <i class="bi bi-camera-video"></i>
-                                Activar Cámara
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -52,7 +46,7 @@
                             Micrófono
                         </h6>
                         <select class="form-select form-select-sm" id="microphoneSelect">
-                            <option value="">Cargando micrófonos...</option>
+                            <option value="">Seleccionar micrófono...</option>
                         </select>
                         <div class="mt-2">
                             <div class="progress" style="height: 6px;">
@@ -71,10 +65,10 @@
                 <div class="card">
                     <div class="card-body">
                         <div class="video-container">
-                            <video id="videoPreview" autoplay muted class="video-preview"></video>
+                            <video id="videoPreview" autoplay muted playsinline class="video-preview"></video>
                             <div class="video-placeholder" id="videoPlaceholder">
                                 <i class="bi bi-camera-video-off display-1 text-muted"></i>
-                                <p class="text-muted mt-2">Activa la cámara para ver la vista previa</p>
+                                <p class="text-muted mt-2">Selecciona una cámara para ver la vista previa</p>
                             </div>
                         </div>
                     </div>
@@ -83,7 +77,7 @@
         </div>
 
         <!-- Camera Effects -->
-        <div class="row mb-4">
+        <div class="row mb-4" id="cameraControls" style="display: none;">
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
@@ -92,7 +86,7 @@
                             Efectos de Cámara
                         </h6>
                         <div class="btn-group-sm d-flex flex-wrap gap-2" role="group">
-                            <button class="btn btn-outline-secondary effect-btn" data-effect="none">
+                            <button class="btn btn-outline-secondary effect-btn active" data-effect="none">
                                 <i class="bi bi-circle"></i> Normal
                             </button>
                             <button class="btn btn-outline-secondary effect-btn" data-effect="grayscale">
@@ -109,6 +103,9 @@
                             </button>
                             <button class="btn btn-outline-secondary effect-btn" data-effect="contrast">
                                 <i class="bi bi-contrast"></i> Contraste+
+                            </button>
+                            <button class="btn btn-outline-secondary effect-btn" data-effect="saturate">
+                                <i class="bi bi-palette-fill"></i> Saturación+
                             </button>
                         </div>
                     </div>
@@ -163,6 +160,36 @@
             </div>
         </div>
 
+        <!-- Device Status -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Estado de Dispositivos
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-camera me-2"></i>
+                                    <span class="me-2">Cámaras encontradas:</span>
+                                    <span class="badge bg-primary" id="cameraCount">0</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-mic me-2"></i>
+                                    <span class="me-2">Micrófonos encontrados:</span>
+                                    <span class="badge bg-success" id="microphoneCount">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Instructions Footer -->
         <footer class="text-center text-muted">
             <small>
@@ -185,8 +212,9 @@
                         <p>Esta aplicación necesita acceso a tu cámara y micrófono para:</p>
                         <ul>
                             <li>Mostrar vista previa de la cámara</li>
+                            <li>Aplicar efectos visuales</li>
                             <li>Grabar audio desde el micrófono</li>
-                            <li>Probar diferentes dispositivos</li>
+                            <li>Enumerar todos los dispositivos disponibles</li>
                         </ul>
                         <p class="mb-0"><strong>Haz clic en "Permitir" cuando tu navegador solicite los permisos.</strong></p>
                     </div>
