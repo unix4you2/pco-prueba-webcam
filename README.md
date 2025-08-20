@@ -1,4 +1,4 @@
-# ![](https://github.com/unix4you2/practico/raw/master/img/logo.png) Prueba de dispositivos
+# ![](https://github.com/unix4you2/practico/raw/master/img/logo.png) Test de dispositivos
 
 Este es un proyecto derivado de [Práctico Framework](https://www.practico.org//) articulable como plugin o complemento
 
