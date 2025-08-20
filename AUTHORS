@@ -1,0 +1,20 @@
+Practico Framework for PHP - Visor de archivos KML
+========================================================================
+Copyright (c) 2022 John F. Arroyave Gutiérrez unix4you2@gmail.com
+                                              www.practico.org
+------------------------------------------------------------------------
+Important: All source files in this project should be  UTF-8 Without BOM
+------------------------------------------------------------------------
+
+This project uses a lot of tools to build and deploy its applications,
+parts of the package are under other, compatible licenses:
+
+Font-Awesome
+	Location: inc/font-awesome/fonts/*
+	Font License: SIL OFL 1.1
+	URL: http://scripts.sil.org/OFL
+	Location: Applies to all CSS and LESS files in the following
+	          directories: font-awesome/css/, font-awesome/less/,
+	          and font-awesome/scss/.
+	Code License: MIT License
+	URL: http://opensource.org/licenses/mit-license.html
