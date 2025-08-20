@@ -1,112 +1,125 @@
 <!DOCTYPE html>
+<!--
+	 _
+	|_) _ _  _ _|_. _ _					  	Copyright (C) 2012-2025
+	|  | (_|(_  | |(_(_) 				  	John F. Arroyave Gutiérrez
+	  www.practico.org					  	unix4you2@gmail.com
+                                            All rights reserved.
+    
+	 This program is free software: you can redistribute it and/or modify
+	 it under the terms of the GNU General Public License as published by
+	 the Free Software Foundation, either version 3 of the License, or
+	 (at your option) any later version.
+
+	 This program is distributed in the hope that it will be useful,
+	 but WITHOUT ANY WARRANTY; without even the implied warranty of
+	 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	 GNU General Public License for more details.
+
+	 You should have received a copy of the GNU General Public License
+	 along with this program.  If not, see <http://www.gnu.org/licenses/>
+	 
+	            --- TRADUCCION NO OFICIAL DE LA LICENCIA ---
+
+     Esta es una traducción no oficial de la Licencia Pública General de
+     GNU al español. No ha sido publicada por la Free Software Foundation
+     y no establece los términos jurídicos de distribución del software 
+     publicado bajo la GPL 3 de GNU, solo la GPL de GNU original en inglés
+     lo hace. De todos modos, esperamos que esta traducción ayude a los
+     hispanohablantes a comprender mejor la GPL de GNU:
+	 
+     Este programa es software libre: puede redistribuirlo y/o modificarlo
+     bajo los términos de la Licencia General Pública de GNU publicada por
+     la Free Software Foundation, ya sea la versión 3 de la Licencia, o 
+     (a su elección) cualquier versión posterior.
+
+     Este programa se distribuye con la esperanza de que sea útil pero SIN
+     NINGUNA GARANTÍA; incluso sin la garantía implícita de MERCANTIBILIDAD
+     o CALIFICADA PARA UN PROPÓSITO EN PARTICULAR. Vea la Licencia General
+     Pública de GNU para más detalles.
+
+     Usted ha debido de recibir una copia de la Licencia General Pública de
+     GNU junto con este programa. Si no, vea <http://www.gnu.org/licenses/>
+-->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prueba de Micrófono y Cámara Web - Corregida</title>
-    
-    <!-- Bootstrap 5 CSS -->
+    <title>Test de Dispositivos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- Custom CSS -->
     <link href="style.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container py-4">
-        <!-- Header -->
-        <header class="text-center mb-4">
-            <h1 class="display-6 mb-2">
-                <i class="bi bi-camera-video me-2"></i>
-                Prueba de Dispositivos - Versión Corregida
-            </h1>
-            <p class="text-muted">Prueba tu micrófono y cámara web con efectos y grabación</p>
+    <div class="container py-4a">
+
+        <header class="header">
+			<table cellpadding=5><tr>
+				<td>
+					<div Leame="INICIO - BANNER PRACTICO FRAMEWORK" align=center style='margin-right:30px; font-size:9px; color: white; DISPLAY: block; POSITION: relative; bsackground-color: #73061d; padding:7px; border-radius: 6px;'>
+                        <a style="color:black;" href='https://www.practico.org' target='_blank'>Mini-App de <b>practico.org</b><br>
+                        <img border=0 ALT="[Practico Framework]" width=100 src="data:image/png;base64,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"></a>
+                    </div Leame="FIN - BANNER PRACTICO FRAMEWORK">
+				</td>
+				<td align=left>
+					<h1><i class="bi bi-camera-video me-2"></i>Test de Dispositivos</h1>
+					<p>Prueba tu micr&oacute;fono y c&aacute;mara web</p>
+				</td>
+			</tr></table>
         </header>
 
-        <!-- Device Selection -->
-        <div class="row mb-4">
-            <div class="col-md-6 mb-3">
+        
+        <!-- Selección de Dispositivos -->
+        <div class="row mb-3">
+            <div class="col-md-6">
                 <div class="card">
                     <div class="card-body">
-                        <h6 class="card-title">
-                            <i class="bi bi-camera me-2"></i>
-                            Cámara
-                        </h6>
-                        <select class="form-select form-select-sm" id="cameraSelect">
-                            <option value="">Seleccionar cámara...</option>
+                        <h6><i class="bi bi-camera me-2"></i>Cámara</h6>
+                        <select id="cameraSelect" class="form-select form-select-sm mb-2">
+                            <option value="">Cargando cámaras...</option>
                         </select>
+                        <button id="toggleCamera" class="btn btn-sm btn-primary">
+                            <i class="bi bi-camera-video me-1"></i> Activar
+                        </button>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-6">
                 <div class="card">
                     <div class="card-body">
-                        <h6 class="card-title">
-                            <i class="bi bi-mic me-2"></i>
-                            Micrófono
-                        </h6>
-                        <select class="form-select form-select-sm" id="microphoneSelect">
-                            <option value="">Seleccionar micrófono...</option>
+                        <h6><i class="bi bi-mic me-2"></i>Micrófono</h6>
+                        <select id="micSelect" class="form-select form-select-sm mb-2">
+                            <option value="">Cargando micrófonos...</option>
                         </select>
-                        <div class="mt-2">
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar bg-success" id="audioLevel" style="width: 0%"></div>
-                            </div>
-                            <small class="text-muted">Nivel de audio</small>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-success" id="audioLevel" style="width: 0%"></div>
                         </div>
+                        <small class="text-muted">Nivel de audio</small>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Main Video Preview -->
-        <div class="row mb-4">
+        <!-- Video Preview -->
+        <div class="row mb-3">
             <div class="col-12">
                 <div class="card">
-                    <div class="card-body">
+                    <div class="card-body text-center">
                         <div class="video-container">
-                            <video id="videoPreview" autoplay muted playsinline class="video-preview"></video>
-                            <div class="video-placeholder" id="videoPlaceholder">
+                            <video id="videoPreview" width="100%" height="300" style="max-width: 600px; background: #000;" 
+                                   autoplay muted playsinline class="rounded d-none"></video>
+                            <div id="videoPlaceholder" class="video-placeholder">
                                 <i class="bi bi-camera-video-off display-1 text-muted"></i>
-                                <p class="text-muted mt-2">Selecciona una cámara para ver la vista previa</p>
+                                <p class="text-muted mt-2">Activa la cámara para ver la vista previa</p>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Camera Effects -->
-        <div class="row mb-4" id="cameraControls" style="display: none;">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title">
-                            <i class="bi bi-palette me-2"></i>
-                            Efectos de Cámara
-                        </h6>
-                        <div class="btn-group-sm d-flex flex-wrap gap-2" role="group">
-                            <button class="btn btn-outline-secondary effect-btn active" data-effect="none">
-                                <i class="bi bi-circle"></i> Normal
-                            </button>
-                            <button class="btn btn-outline-secondary effect-btn" data-effect="grayscale">
-                                <i class="bi bi-filter-square"></i> Escala de Grises
-                            </button>
-                            <button class="btn btn-outline-secondary effect-btn" data-effect="sepia">
-                                <i class="bi bi-palette2"></i> Sepia
-                            </button>
-                            <button class="btn btn-outline-secondary effect-btn" data-effect="blur">
-                                <i class="bi bi-droplet"></i> Blur
-                            </button>
-                            <button class="btn btn-outline-secondary effect-btn" data-effect="brightness">
-                                <i class="bi bi-brightness-high"></i> Brillo+
-                            </button>
-                            <button class="btn btn-outline-secondary effect-btn" data-effect="contrast">
-                                <i class="bi bi-contrast"></i> Contraste+
-                            </button>
-                            <button class="btn btn-outline-secondary effect-btn" data-effect="saturate">
-                                <i class="bi bi-palette-fill"></i> Saturación+
-                            </button>
+                        <div class="mt-3">
+                            <button class="btn btn-sm btn-outline-secondary effect-btn active" data-effect="none">Sin efecto</button>
+                            <button class="btn btn-sm btn-outline-secondary effect-btn" data-effect="sepia">Sepia</button>
+                            <button class="btn btn-sm btn-outline-secondary effect-btn" data-effect="blur">Blur</button>
+                            <button class="btn btn-sm btn-outline-secondary effect-btn" data-effect="brightness">Brillo</button>
+                            <button class="btn btn-sm btn-outline-secondary effect-btn" data-effect="contrast">Contraste</button>
+                            <button class="btn btn-sm btn-outline-secondary effect-btn" data-effect="grayscale">B&N</button>
                         </div>
                     </div>
                 </div>
@@ -114,131 +127,36 @@
         </div>
 
         <!-- Audio Recording -->
-        <div class="row mb-4">
-            <div class="col-md-6 mb-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title">
-                            <i class="bi bi-record-circle me-2"></i>
-                            Grabación de Audio
-                        </h6>
-                        <div class="d-flex align-items-center gap-2 mb-3">
-                            <button class="btn btn-danger" id="recordButton">
-                                <i class="bi bi-record-fill"></i>
-                                <span id="recordButtonText">Iniciar Grabación</span>
-                            </button>
-                            <div class="recording-time">
-                                <span id="recordingTime" class="badge bg-danger d-none">00:00</span>
-                            </div>
-                        </div>
-                        <div id="recordingIndicator" class="recording-indicator d-none">
-                            <div class="d-flex align-items-center">
-                                <div class="recording-pulse me-2"></div>
-                                <small class="text-danger">Grabando...</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 mb-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title">
-                            <i class="bi bi-play-circle me-2"></i>
-                            Reproducción
-                        </h6>
-                        <audio id="audioPlayback" controls class="w-100 mb-2 d-none"></audio>
-                        <div id="noRecording" class="text-muted small">
-                            No hay grabaciones disponibles
-                        </div>
-                        <button class="btn btn-success btn-sm d-none" id="downloadButton">
-                            <i class="bi bi-download"></i>
-                            Descargar Audio
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Device Status -->
-        <div class="row mb-4">
+        <div class="row">
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
-                        <h6 class="card-title">
-                            <i class="bi bi-info-circle me-2"></i>
-                            Estado de Dispositivos
-                        </h6>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-camera me-2"></i>
-                                    <span class="me-2">Cámaras encontradas:</span>
-                                    <span class="badge bg-primary" id="cameraCount">0</span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-mic me-2"></i>
-                                    <span class="me-2">Micrófonos encontrados:</span>
-                                    <span class="badge bg-success" id="microphoneCount">0</span>
-                                </div>
-                            </div>
+                        <h6><i class="bi bi-mic-fill me-2"></i>Grabación de Audio</h6>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <button id="recordBtn" class="btn btn-danger btn-sm">
+                                <i class="bi bi-record-circle me-1"></i> Grabar
+                            </button>
+                            <span id="recordTime" class="badge bg-secondary">00:00</span>
+                        </div>
+                        <div id="audioControls" class="d-none">
+                            <audio id="audioPlayer" controls class="w-100 mb-2"></audio>
+                            <button id="downloadBtn" class="btn btn-success btn-sm">
+                                <i class="bi bi-download me-1"></i> Descargar
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Instructions Footer -->
-        <footer class="text-center text-muted">
-            <small>
-                <i class="bi bi-info-circle me-1"></i>
-                La aplicación requiere permisos de cámara y micrófono para funcionar correctamente
-            </small>
-        </footer>
-
-        <!-- Permission Modal -->
-        <div class="modal fade" id="permissionModal" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="bi bi-shield-check me-2"></i>
-                            Permisos Requeridos
-                        </h5>
-                    </div>
-                    <div class="modal-body">
-                        <p>Esta aplicación necesita acceso a tu cámara y micrófono para:</p>
-                        <ul>
-                            <li>Mostrar vista previa de la cámara</li>
-                            <li>Aplicar efectos visuales</li>
-                            <li>Grabar audio desde el micrófono</li>
-                            <li>Enumerar todos los dispositivos disponibles</li>
-                        </ul>
-                        <p class="mb-0"><strong>Haz clic en "Permitir" cuando tu navegador solicite los permisos.</strong></p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" id="requestPermissions">
-                            <i class="bi bi-check-lg me-2"></i>
-                            Solicitar Permisos
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Error Alert -->
-        <div class="alert alert-danger alert-dismissible fade d-none" role="alert" id="errorAlert">
-            <i class="bi bi-exclamation-triangle me-2"></i>
-            <span id="errorMessage"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <!-- Status Messages -->
+        <div id="statusMessage" class="alert d-none mt-3" role="alert">
+            <i class="bi bi-info-circle me-2"></i>
+            <span id="statusText"></span>
         </div>
     </div>
-
-    <!-- Bootstrap 5 JS -->
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Custom JS -->
     <script src="app.js"></script>
 </body>
 </html>

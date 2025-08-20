@@ -1,135 +1,57 @@
-class DeviceTester {
+class DeviceTest {
     constructor() {
-        this.currentStream = null;
+        this.videoStream = null;
+        this.audioStream = null;
+        this.combinedStream = null;
         this.mediaRecorder = null;
         this.recordedChunks = [];
         this.isRecording = false;
-        this.recordingStartTime = null;
-        this.recordingTimer = null;
+        this.startTime = 0;
+        this.timerInterval = null;
+        this.recordedBlob = null;
         this.audioContext = null;
         this.analyser = null;
         this.microphone = null;
         this.dataArray = null;
-        this.recordedBlob = null;
-        this.permissionsGranted = false;
+        this.animationFrame = null;
         
         this.init();
     }
-
+    
     async init() {
         this.setupEventListeners();
-        // Check if permissions are already granted
-        try {
-            await this.checkExistingPermissions();
-        } catch (error) {
-            this.showPermissionModal();
-        }
+        await this.requestPermissions();
     }
-
-    async checkExistingPermissions() {
-        try {
-            // Try to get media to check if permissions are already granted
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: true
-            });
-            
-            this.currentStream = stream;
-            this.permissionsGranted = true;
-            await this.loadDevices();
-            
-        } catch (error) {
-            // Permissions not granted, show modal
-            this.showPermissionModal();
-        }
-    }
-
+    
     setupEventListeners() {
-        // Permission modal
-        const requestBtn = document.getElementById('requestPermissions');
-        if (requestBtn) {
-            requestBtn.addEventListener('click', async () => {
-                await this.requestPermissions();
-            });
-        }
-
-        // Device selection
-        const cameraSelect = document.getElementById('cameraSelect');
-        if (cameraSelect) {
-            cameraSelect.addEventListener('change', async (e) => {
-                if (e.target.value) {
-                    await this.switchCamera(e.target.value);
-                }
-            });
-        }
-
-        const microphoneSelect = document.getElementById('microphoneSelect');
-        if (microphoneSelect) {
-            microphoneSelect.addEventListener('change', async (e) => {
-                if (e.target.value) {
-                    await this.switchMicrophone(e.target.value);
-                }
-            });
-        }
-
+        // Camera controls
+        document.getElementById('toggleCamera').addEventListener('click', () => this.toggleCamera());
+        document.getElementById('cameraSelect').addEventListener('change', (e) => this.switchCamera(e.target.value));
+        document.getElementById('micSelect').addEventListener('change', (e) => this.switchMicrophone(e.target.value));
+        
         // Effect buttons
         document.querySelectorAll('.effect-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const effectBtn = e.target.closest('.effect-btn');
-                if (effectBtn && effectBtn.dataset.effect) {
-                    this.applyEffect(effectBtn.dataset.effect);
-                    this.updateActiveEffect(effectBtn);
-                }
+                this.applyEffect(e.target.dataset.effect);
+                this.updateEffectButtons(e.target);
             });
         });
-
+        
         // Recording controls
-        const recordBtn = document.getElementById('recordButton');
-        if (recordBtn) {
-            recordBtn.addEventListener('click', () => {
-                this.toggleRecording();
-            });
-        }
-
-        const downloadBtn = document.getElementById('downloadButton');
-        if (downloadBtn) {
-            downloadBtn.addEventListener('click', () => {
-                this.downloadRecording();
-            });
-        }
+        document.getElementById('recordBtn').addEventListener('click', () => this.toggleRecording());
+        document.getElementById('downloadBtn').addEventListener('click', () => this.downloadAudio());
     }
-
-    showPermissionModal() {
-        const modalElement = document.getElementById('permissionModal');
-        if (modalElement) {
-            const modal = new bootstrap.Modal(modalElement, {
-                backdrop: 'static',
-                keyboard: false
-            });
-            modal.show();
-        }
-    }
-
-    hidePermissionModal() {
-        const modalElement = document.getElementById('permissionModal');
-        if (modalElement) {
-            const modal = bootstrap.Modal.getInstance(modalElement);
-            if (modal) {
-                modal.hide();
-            }
-        }
-    }
-
+    
     async requestPermissions() {
         try {
-            console.log('Requesting permissions...');
+            this.showStatus('Solicitando permisos de cámara y micrófono...', 'warning');
             
-            // Request both video and audio permissions
-            const stream = await navigator.mediaDevices.getUserMedia({
+            // Request permissions with specific constraints
+            const stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { 
                     width: { ideal: 1280 }, 
-                    height: { ideal: 720 } 
-                },
+                    height: { ideal: 720 }
+                }, 
                 audio: {
                     echoCancellation: true,
                     noiseSuppression: true,
@@ -137,142 +59,202 @@ class DeviceTester {
                 }
             });
             
-            console.log('Permissions granted, stream obtained');
+            // Store the initial stream
+            this.combinedStream = stream;
             
-            // Store the stream
-            this.currentStream = stream;
-            this.permissionsGranted = true;
+            this.showStatus('Permisos concedidos correctamente', 'success');
             
-            // Hide modal first
-            this.hidePermissionModal();
-            
-            // Load devices
+            // Load devices after getting permissions
             await this.loadDevices();
             
-            // Show success message
-            this.showSuccess('Permisos concedidos correctamente');
+            // Setup initial streams
+            await this.setupInitialStreams();
             
         } catch (error) {
-            console.error('Permission error:', error);
-            this.showError('Error al obtener permisos: ' + error.message);
+            console.error('Error requesting permissions:', error);
+            this.showStatus('Error: Se requieren permisos de cámara y micrófono para usar esta aplicación. Por favor, recarga la página y acepta los permisos.', 'danger');
         }
     }
-
+    
+    async setupInitialStreams() {
+        try {
+            // Separate video and audio streams
+            const videoTracks = this.combinedStream.getVideoTracks();
+            const audioTracks = this.combinedStream.getAudioTracks();
+            
+            if (videoTracks.length > 0) {
+                this.videoStream = new MediaStream(videoTracks);
+                // Auto-start camera
+                this.showVideoPreview();
+            }
+            
+            if (audioTracks.length > 0) {
+                this.audioStream = new MediaStream(audioTracks);
+                this.setupAudioAnalyzer();
+            }
+            
+        } catch (error) {
+            console.error('Error setting up initial streams:', error);
+        }
+    }
+    
     async loadDevices() {
         try {
-            console.log('Loading devices...');
+            // Enumerate devices
             const devices = await navigator.mediaDevices.enumerateDevices();
             
-            // Limpiar selects
             const cameraSelect = document.getElementById('cameraSelect');
-            const microphoneSelect = document.getElementById('microphoneSelect');
+            const micSelect = document.getElementById('micSelect');
             
-            if (!cameraSelect || !microphoneSelect) {
-                console.error('Device selects not found');
-                return;
-            }
-            
+            // Clear existing options
             cameraSelect.innerHTML = '<option value="">Seleccionar cámara...</option>';
-            microphoneSelect.innerHTML = '<option value="">Seleccionar micrófono...</option>';
+            micSelect.innerHTML = '<option value="">Seleccionar micrófono...</option>';
             
-            let cameraCount = 0;
-            let microphoneCount = 0;
+            let cameraIndex = 1;
+            let micIndex = 1;
+            let selectedCamera = null;
+            let selectedMic = null;
             
-            // Filtrar y agregar TODOS los dispositivos
-            devices.forEach((device, index) => {
-                const option = document.createElement('option');
-                option.value = device.deviceId;
-                option.text = device.label || `${device.kind} ${index + 1}`;
-                
+            devices.forEach(device => {
                 if (device.kind === 'videoinput') {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.text = device.label || `Cámara ${cameraIndex++}`;
                     cameraSelect.appendChild(option);
-                    cameraCount++;
-                    console.log('Camera found:', device.label || `Camera ${cameraCount}`);
+                    
+                    // Select the first camera by default
+                    if (!selectedCamera) {
+                        selectedCamera = device.deviceId;
+                    }
                 } else if (device.kind === 'audioinput') {
-                    microphoneSelect.appendChild(option);
-                    microphoneCount++;
-                    console.log('Microphone found:', device.label || `Microphone ${microphoneCount}`);
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.text = device.label || `Micrófono ${micIndex++}`;
+                    micSelect.appendChild(option);
+                    
+                    // Select the first microphone by default
+                    if (!selectedMic) {
+                        selectedMic = device.deviceId;
+                    }
                 }
             });
             
-            // Actualizar contadores
-            const cameraCountEl = document.getElementById('cameraCount');
-            const microphoneCountEl = document.getElementById('microphoneCount');
-            
-            if (cameraCountEl) cameraCountEl.textContent = cameraCount;
-            if (microphoneCountEl) microphoneCountEl.textContent = microphoneCount;
-            
-            // Auto-seleccionar primer dispositivo
-            if (cameraSelect.options.length > 1) {
-                cameraSelect.selectedIndex = 1;
-                await this.switchCamera(cameraSelect.value);
+            // Set selected values
+            if (selectedCamera) {
+                cameraSelect.value = selectedCamera;
             }
-            if (microphoneSelect.options.length > 1) {
-                microphoneSelect.selectedIndex = 1;
-                await this.switchMicrophone(microphoneSelect.value);
+            if (selectedMic) {
+                micSelect.value = selectedMic;
             }
             
-            console.log('Devices loaded:', { cameras: cameraCount, microphones: microphoneCount });
+            const cameraCount = cameraSelect.options.length - 1;
+            const micCount = micSelect.options.length - 1;
+            
+            this.showStatus(`Dispositivos cargados: ${cameraCount} cámaras, ${micCount} micrófonos`, 'success');
             
         } catch (error) {
-            console.error('Device loading error:', error);
-            this.showError('Error al cargar dispositivos: ' + error.message);
+            console.error('Error loading devices:', error);
+            this.showStatus('Error al cargar dispositivos', 'danger');
         }
     }
-
-    async switchCamera(deviceId) {
-        try {
-            console.log('Switching camera to:', deviceId);
+    
+    showVideoPreview() {
+        const video = document.getElementById('videoPreview');
+        const placeholder = document.getElementById('videoPlaceholder');
+        const btn = document.getElementById('toggleCamera');
+        
+        if (this.videoStream) {
+            video.srcObject = this.videoStream;
+            video.classList.remove('d-none');
+            placeholder.classList.add('d-none');
             
-            if (this.currentStream) {
-                this.currentStream.getTracks().forEach(track => track.stop());
-            }
-            
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { deviceId: { exact: deviceId } },
-                audio: false
-            });
-            
-            const video = document.getElementById('videoPreview');
-            if (video) {
-                video.srcObject = stream;
-                this.currentStream = stream;
-                
-                // Mostrar video y ocultar placeholder
+            btn.innerHTML = '<i class="bi bi-camera-video-off me-1"></i> Desactivar';
+            btn.className = 'btn btn-sm btn-secondary';
+        }
+    }
+    
+    hideVideoPreview() {
+        const video = document.getElementById('videoPreview');
+        const placeholder = document.getElementById('videoPlaceholder');
+        const btn = document.getElementById('toggleCamera');
+        
+        video.srcObject = null;
+        video.classList.add('d-none');
+        placeholder.classList.remove('d-none');
+        
+        btn.innerHTML = '<i class="bi bi-camera-video me-1"></i> Activar';
+        btn.className = 'btn btn-sm btn-primary';
+    }
+    
+    async toggleCamera() {
+        const video = document.getElementById('videoPreview');
+        
+        if (!video.classList.contains('d-none')) {
+            // Hide camera
+            this.hideVideoPreview();
+        } else {
+            // Show camera
+            if (this.videoStream) {
                 this.showVideoPreview();
-                
-                // Mostrar controles de cámara
-                const cameraControls = document.getElementById('cameraControls');
-                if (cameraControls) {
-                    cameraControls.style.display = 'block';
+            } else {
+                // Try to get camera stream
+                const cameraSelect = document.getElementById('cameraSelect');
+                if (cameraSelect.value) {
+                    await this.switchCamera(cameraSelect.value);
+                } else {
+                    this.showStatus('Por favor selecciona una cámara', 'warning');
                 }
-                
-                this.showSuccess('Cámara cambiada correctamente');
             }
+        }
+    }
+    
+    async switchCamera(deviceId) {
+        if (!deviceId) return;
+        
+        try {
+            // Stop existing video tracks
+            if (this.videoStream) {
+                this.videoStream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Get new video stream
+            const constraints = {
+                video: { 
+                    deviceId: { exact: deviceId },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            };
+            
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            this.videoStream = stream;
+            
+            // Show the video
+            this.showVideoPreview();
             
         } catch (error) {
             console.error('Error switching camera:', error);
-            this.showError('Error al cambiar cámara: ' + error.message);
+            this.showStatus('Error al cambiar cámara: ' + error.message, 'danger');
         }
     }
-
+    
     async switchMicrophone(deviceId) {
+        if (!deviceId) return;
+        
         try {
-            console.log('Switching microphone to:', deviceId);
-            
-            // Mantener video stream si existe
-            const videoConstraints = this.currentStream && this.currentStream.getVideoTracks().length > 0 
-                ? { deviceId: this.currentStream.getVideoTracks()[0].getSettings().deviceId || true }
-                : false;
-            
-            // Parar solo los tracks de audio
-            if (this.currentStream) {
-                this.currentStream.getAudioTracks().forEach(track => track.stop());
+            // Stop existing audio tracks
+            if (this.audioStream) {
+                this.audioStream.getTracks().forEach(track => track.stop());
             }
             
+            // Clean up audio context
+            if (this.audioContext) {
+                await this.audioContext.close();
+            }
+            
+            // Get new audio stream
             const constraints = {
-                video: videoConstraints,
-                audio: {
+                audio: { 
                     deviceId: { exact: deviceId },
                     echoCancellation: true,
                     noiseSuppression: true,
@@ -281,108 +263,26 @@ class DeviceTester {
             };
             
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            this.audioStream = stream;
             
-            // Combinar tracks si hay video existente
-            if (this.currentStream && this.currentStream.getVideoTracks().length > 0) {
-                const videoTrack = this.currentStream.getVideoTracks()[0];
-                const audioTrack = stream.getAudioTracks()[0];
-                
-                this.currentStream = new MediaStream([videoTrack, audioTrack]);
-            } else {
-                this.currentStream = stream;
-            }
-            
+            // Setup audio analyzer
             this.setupAudioAnalyzer();
-            this.showSuccess('Micrófono cambiado correctamente');
             
         } catch (error) {
             console.error('Error switching microphone:', error);
-            this.showError('Error al cambiar micrófono: ' + error.message);
+            this.showStatus('Error al cambiar micrófono: ' + error.message, 'danger');
         }
     }
-
-    showVideoPreview() {
-        const video = document.getElementById('videoPreview');
-        const placeholder = document.getElementById('videoPlaceholder');
-        
-        if (video && placeholder) {
-            video.classList.remove('d-none');
-            placeholder.classList.add('d-none');
-        }
-    }
-
-    hideVideoPreview() {
-        const video = document.getElementById('videoPreview');
-        const placeholder = document.getElementById('videoPlaceholder');
-        
-        if (video && placeholder) {
-            video.classList.add('d-none');
-            placeholder.classList.remove('d-none');
-        }
-    }
-
-    applyEffect(effect) {
-        const video = document.getElementById('videoPreview');
-        if (!video) return;
-        
-        // Remover efectos previos
-        video.style.filter = '';
-        
-        // Aplicar nuevo efecto
-        switch(effect) {
-            case 'sepia':
-                video.style.filter = 'sepia(100%)';
-                break;
-            case 'blur':
-                video.style.filter = 'blur(3px)';
-                break;
-            case 'brightness':
-                video.style.filter = 'brightness(150%)';
-                break;
-            case 'contrast':
-                video.style.filter = 'contrast(150%)';
-                break;
-            case 'grayscale':
-                video.style.filter = 'grayscale(100%)';
-                break;
-            case 'saturate':
-                video.style.filter = 'saturate(200%)';
-                break;
-            case 'none':
-            default:
-                video.style.filter = 'none';
-                break;
-        }
-        
-        console.log('Applied effect:', effect);
-    }
-
-    updateActiveEffect(activeButton) {
-        // Remove active class from all buttons
-        document.querySelectorAll('.effect-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        
-        // Add active class to clicked button
-        if (activeButton) {
-            activeButton.classList.add('active');
-        }
-    }
-
+    
     setupAudioAnalyzer() {
-        if (!this.currentStream || this.currentStream.getAudioTracks().length === 0) return;
+        if (!this.audioStream) return;
         
         try {
-            // Clean up existing audio context
-            if (this.audioContext) {
-                this.audioContext.close();
-            }
-            
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             this.analyser = this.audioContext.createAnalyser();
-            this.microphone = this.audioContext.createMediaStreamSource(this.currentStream);
+            this.microphone = this.audioContext.createMediaStreamSource(this.audioStream);
             
-            this.analyser.fftSize = 512;
+            this.analyser.fftSize = 256;
             const bufferLength = this.analyser.frequencyBinCount;
             this.dataArray = new Uint8Array(bufferLength);
             
@@ -390,10 +290,10 @@ class DeviceTester {
             this.updateAudioLevel();
             
         } catch (error) {
-            console.warn('Error setting up audio analyzer:', error);
+            console.error('Error setting up audio analyzer:', error);
         }
     }
-
+    
     updateAudioLevel() {
         if (!this.analyser || !this.dataArray) return;
         
@@ -412,9 +312,29 @@ class DeviceTester {
             audioLevel.style.width = percentage + '%';
         }
         
-        requestAnimationFrame(() => this.updateAudioLevel());
+        this.animationFrame = requestAnimationFrame(() => this.updateAudioLevel());
     }
-
+    
+    applyEffect(effect) {
+        const video = document.getElementById('videoPreview');
+        
+        // Remove all effect classes first
+        const classes = ['effect-sepia', 'effect-blur', 'effect-brightness', 'effect-contrast', 'effect-grayscale'];
+        classes.forEach(cls => video.classList.remove(cls));
+        
+        // Apply new effect
+        if (effect && effect !== 'none') {
+            video.classList.add(`effect-${effect}`);
+        }
+    }
+    
+    updateEffectButtons(activeBtn) {
+        document.querySelectorAll('.effect-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        activeBtn.classList.add('active');
+    }
+    
     async toggleRecording() {
         if (this.isRecording) {
             this.stopRecording();
@@ -422,32 +342,33 @@ class DeviceTester {
             await this.startRecording();
         }
     }
-
+    
     async startRecording() {
         try {
-            if (!this.currentStream || this.currentStream.getAudioTracks().length === 0) {
-                this.showError('No hay micrófono disponible para grabar');
+            if (!this.audioStream) {
+                this.showStatus('Por favor selecciona un micrófono primero', 'warning');
                 return;
             }
             
-            // Create audio-only stream for recording
-            const audioStream = new MediaStream(this.currentStream.getAudioTracks());
-            
             this.recordedChunks = [];
             
-            // Try different MIME types for better compatibility
+            // Determine best MIME type
             let mimeType = 'audio/webm;codecs=opus';
             if (!MediaRecorder.isTypeSupported(mimeType)) {
                 mimeType = 'audio/webm';
-            }
-            if (!MediaRecorder.isTypeSupported(mimeType)) {
-                mimeType = 'audio/mp4';
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    mimeType = 'audio/mp4';
+                    if (!MediaRecorder.isTypeSupported(mimeType)) {
+                        mimeType = '';
+                    }
+                }
             }
             
-            this.mediaRecorder = new MediaRecorder(audioStream, { mimeType });
+            const options = mimeType ? { mimeType } : {};
+            this.mediaRecorder = new MediaRecorder(this.audioStream, options);
             
             this.mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
+                if (event.data && event.data.size > 0) {
                     this.recordedChunks.push(event.data);
                 }
             };
@@ -456,116 +377,83 @@ class DeviceTester {
                 this.processRecording();
             };
             
-            this.mediaRecorder.start(100);
+            this.mediaRecorder.start(100); // Collect data every 100ms
             this.isRecording = true;
-            this.recordingStartTime = Date.now();
+            this.startTime = Date.now();
+            this.updateRecordButton(true);
+            this.startTimer();
             
-            this.updateRecordingUI(true);
-            this.startRecordingTimer();
+            this.showStatus('Grabación iniciada', 'success');
             
         } catch (error) {
-            console.error('Recording start error:', error);
-            this.showError('Error al iniciar grabación: ' + error.message);
+            console.error('Error starting recording:', error);
+            this.showStatus('Error al iniciar grabación: ' + error.message, 'danger');
         }
     }
-
+    
     stopRecording() {
         if (this.mediaRecorder && this.isRecording) {
             this.mediaRecorder.stop();
             this.isRecording = false;
-            this.updateRecordingUI(false);
-            this.stopRecordingTimer();
+            this.updateRecordButton(false);
+            this.stopTimer();
+            this.showStatus('Grabación detenida', 'success');
         }
     }
-
-    updateRecordingUI(isRecording) {
-        const button = document.getElementById('recordButton');
-        const buttonText = document.getElementById('recordButtonText');
-        const indicator = document.getElementById('recordingIndicator');
-        
-        if (!button || !buttonText || !indicator) return;
-        
+    
+    updateRecordButton(isRecording) {
+        const btn = document.getElementById('recordBtn');
         if (isRecording) {
-            button.className = 'btn btn-outline-danger';
-            buttonText.textContent = 'Detener Grabación';
-            indicator.classList.remove('d-none');
-            const icon = button.querySelector('i');
-            if (icon) icon.className = 'bi bi-stop-fill';
+            btn.innerHTML = '<i class="bi bi-stop-circle me-1"></i> Detener';
+            btn.className = 'btn btn-secondary btn-sm recording';
         } else {
-            button.className = 'btn btn-danger';
-            buttonText.textContent = 'Iniciar Grabación';
-            indicator.classList.add('d-none');
-            const icon = button.querySelector('i');
-            if (icon) icon.className = 'bi bi-record-fill';
+            btn.innerHTML = '<i class="bi bi-record-circle me-1"></i> Grabar';
+            btn.className = 'btn btn-danger btn-sm';
         }
     }
-
-    startRecordingTimer() {
-        const timeDisplay = document.getElementById('recordingTime');
-        if (!timeDisplay) return;
-        
-        timeDisplay.classList.remove('d-none');
-        
-        this.recordingTimer = setInterval(() => {
-            const elapsed = Date.now() - this.recordingStartTime;
-            const minutes = Math.floor(elapsed / 60000);
-            const seconds = Math.floor((elapsed % 60000) / 1000);
+    
+    startTimer() {
+        const timeElement = document.getElementById('recordTime');
+        this.timerInterval = setInterval(() => {
+            const elapsed = Date.now() - this.startTime;
+            const seconds = Math.floor(elapsed / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const displaySeconds = seconds % 60;
             
-            timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            timeElement.textContent = `${minutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}`;
         }, 1000);
     }
-
-    stopRecordingTimer() {
-        if (this.recordingTimer) {
-            clearInterval(this.recordingTimer);
-            this.recordingTimer = null;
+    
+    stopTimer() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
         }
-        
-        const timeDisplay = document.getElementById('recordingTime');
-        if (timeDisplay) {
-            timeDisplay.classList.add('d-none');
-            timeDisplay.textContent = '00:00';
-        }
+        document.getElementById('recordTime').textContent = '00:00';
     }
-
+    
     processRecording() {
         if (this.recordedChunks.length === 0) {
-            this.showError('No se grabó audio');
+            this.showStatus('No se pudo grabar audio', 'warning');
             return;
         }
         
-        const blob = new Blob(this.recordedChunks, { type: 'audio/webm' });
-        const url = URL.createObjectURL(blob);
+        const mimeType = this.mediaRecorder?.mimeType || 'audio/webm';
+        this.recordedBlob = new Blob(this.recordedChunks, { type: mimeType });
         
-        this.setupAudioPlayback(url, blob);
-        this.showSuccess('Grabación completada');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioControls = document.getElementById('audioControls');
+        
+        const audioUrl = URL.createObjectURL(this.recordedBlob);
+        audioPlayer.src = audioUrl;
+        audioControls.classList.remove('d-none');
+        
+        this.showStatus('Grabación completada y lista para reproducir', 'success');
     }
-
-    setupAudioPlayback(url, blob) {
-        const audio = document.getElementById('audioPlayback');
-        const downloadBtn = document.getElementById('downloadButton');
-        const noRecording = document.getElementById('noRecording');
-        
-        if (audio) {
-            audio.src = url;
-            audio.classList.remove('d-none');
-        }
-        
-        if (downloadBtn) {
-            downloadBtn.classList.remove('d-none');
-        }
-        
-        if (noRecording) {
-            noRecording.classList.add('d-none');
-        }
-        
-        // Store blob for download
-        this.recordedBlob = blob;
-    }
-
-    downloadRecording() {
+    
+    downloadAudio() {
         if (!this.recordedBlob) {
-            this.showError('No hay grabación para descargar');
+            this.showStatus('No hay grabación para descargar', 'warning');
             return;
         }
         
@@ -574,75 +462,73 @@ class DeviceTester {
         const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
         
         a.href = url;
-        a.download = `grabacion-${timestamp}.webm`;
+        a.download = `grabacion_${timestamp}.webm`;
+        a.style.display = 'none';
+        
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         
         URL.revokeObjectURL(url);
-        this.showSuccess('Descarga iniciada');
+        this.showStatus('Descarga iniciada', 'success');
     }
-
-    showError(message) {
-        const alert = document.getElementById('errorAlert');
-        const messageEl = document.getElementById('errorMessage');
+    
+    showStatus(message, type) {
+        const statusMessage = document.getElementById('statusMessage');
+        const statusText = document.getElementById('statusText');
         
-        if (alert && messageEl) {
-            messageEl.textContent = message;
-            alert.classList.remove('d-none');
-            alert.classList.add('show');
-            
-            // Auto-hide after 5 seconds
+        statusMessage.className = `alert alert-${type}`;
+        statusText.textContent = message;
+        statusMessage.classList.remove('d-none');
+        
+        // Auto-hide success and warning messages after 4 seconds
+        if (type === 'success' || type === 'warning') {
             setTimeout(() => {
-                alert.classList.remove('show');
-                setTimeout(() => {
-                    alert.classList.add('d-none');
-                }, 150);
-            }, 5000);
+                statusMessage.classList.add('d-none');
+            }, 4000);
         }
-        
-        console.error('Error:', message);
     }
-
-    showSuccess(message) {
-        console.log('Success:', message);
-        
-        // Create temporary success alert
-        const alertHtml = `
-            <div class="alert alert-success alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
-                <i class="bi bi-check-circle me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-        
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = alertHtml;
-        const alertElement = tempDiv.firstElementChild;
-        document.body.appendChild(alertElement);
-        
-        // Auto-remove after 3 seconds
-        setTimeout(() => {
-            const alert = document.body.querySelector('.alert-success');
-            if (alert) {
-                alert.remove();
-            }
-        }, 3000);
+    
+    // Cleanup method
+    cleanup() {
+        if (this.videoStream) {
+            this.videoStream.getTracks().forEach(track => track.stop());
+        }
+        if (this.audioStream) {
+            this.audioStream.getTracks().forEach(track => track.stop());
+        }
+        if (this.combinedStream) {
+            this.combinedStream.getTracks().forEach(track => track.stop());
+        }
+        if (this.audioContext) {
+            this.audioContext.close().catch(console.error);
+        }
+        if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame);
+        }
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+        }
     }
 }
 
-// Initialize the application when DOM is loaded
+// Initialize app when page loads
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing DeviceTester...');
-    window.deviceTester = new DeviceTester();
+    window.deviceTest = new DeviceTest();
 });
 
-// Handle page unload to clean up streams
+// Cleanup on page unload
 window.addEventListener('beforeunload', () => {
-    if (window.deviceTester && window.deviceTester.currentStream) {
-        window.deviceTester.currentStream.getTracks().forEach(track => track.stop());
+    if (window.deviceTest) {
+        window.deviceTest.cleanup();
     }
-    if (window.deviceTester && window.deviceTester.audioContext) {
-        window.deviceTester.audioContext.close();
+});
+
+// Handle visibility change to pause/resume audio analysis
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && window.deviceTest && window.deviceTest.animationFrame) {
+        cancelAnimationFrame(window.deviceTest.animationFrame);
+    } else if (!document.hidden && window.deviceTest && window.deviceTest.setupAudioAnalyzer) {
+        window.deviceTest.updateAudioLevel();
     }
 });
